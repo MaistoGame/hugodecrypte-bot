@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hugo Décrypte — Bot Discord</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --border: #1f1f26;
+    --accent: #5865F2;
+    --accent2: #F1C40F;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --green: #57F287;
+    --red: #ED4245;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88,101,242,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88,101,242,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow {
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(88,101,242,0.08) 0%, transparent 70%);
+    top: -200px; left: -200px;
+    pointer-events: none;
+    z-index: 0;
+    animation: glowMove 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes glowMove {
+    from { transform: translate(0, 0); }
+    to { transform: translate(200px, 150px); }
+  }
+
+  main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  /* NAV */
+  nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 24px;
+    max-width: 900px; margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px;
+  }
+
+  .nav-logo .dot {
+    width: 10px; height: 10px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.85rem; font-weight: 500; letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* HERO */
+  .hero {
+    padding: 100px 0 80px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 24px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(88,101,242,0.1);
+    border: 1px solid rgba(88,101,242,0.3);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 0.78rem; font-family: 'DM Mono', monospace;
+    color: var(--accent); letter-spacing: 1px; text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    font-weight: 800; line-height: 1.05;
+    letter-spacing: -2px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-desc {
+    font-size: 1.1rem; color: var(--muted);
+    max-width: 540px; line-height: 1.7; font-weight: 400;
+  }
+
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700;
+    text-decoration: none; cursor: pointer; border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent); color: white;
+  }
+  .btn-primary:hover { background: #4752c4; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(88,101,242,0.3); }
+
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); transform: translateY(-2px); }
+
+  /* FEATURES */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 40px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .features {
+    padding: 60px 0;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feature-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+
+  .feature-icon {
+    font-size: 1.8rem; margin-bottom: 16px;
+    display: block;
+  }
+
+  .feature-card h3 {
+    font-size: 1rem; font-weight: 700; margin-bottom: 8px;
+  }
+
+  .feature-card p {
+    font-size: 0.85rem; color: var(--muted); line-height: 1.6; font-weight: 400;
+  }
+
+  .feature-card code {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    background: rgba(88,101,242,0.1);
+    color: var(--accent);
+    padding: 2px 6px; border-radius: 4px;
+  }
+
+  /* COMMANDS */
+  .commands { padding: 60px 0; animation: fadeUp 0.8s ease 0.3s both; }
+
+  .cmd-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .cmd-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: flex; align-items: center; gap: 20px;
+    transition: border-color 0.2s;
+  }
+  .cmd-item:hover { border-color: rgba(88,101,242,0.4); }
+
+  .cmd-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem; color: var(--accent);
+    font-weight: 500; min-width: 180px;
+  }
+
+  .cmd-desc {
+    font-size: 0.85rem; color: var(--muted); font-weight: 400;
+  }
+
+  .cmd-tag {
+    margin-left: auto;
+    font-size: 0.7rem; font-family: 'DM Mono', monospace;
+    padding: 3px 10px; border-radius: 100px;
+    text-transform: uppercase; letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .tag-fun { background: rgba(241,196,15,0.1); color: var(--accent2); border: 1px solid rgba(241,196,15,0.2); }
+  .tag-stats { background: rgba(87,242,135,0.1); color: var(--green); border: 1px solid rgba(87,242,135,0.2); }
+  .tag-info { background: rgba(88,101,242,0.1); color: var(--accent); border: 1px solid rgba(88,101,242,0.2); }
+  .tag-mosque { background: rgba(46,204,113,0.1); color: #2ecc71; border: 1px solid rgba(46,204,113,0.2); }
+
+  /* FOOTER / LEGAL LINKS */
+  .footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 40px 24px;
+    max-width: 900px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+  }
+
+  .footer-left { font-size: 0.8rem; color: var(--muted); }
+  .footer-right { display: flex; gap: 20px; }
+  .footer-right a {
+    font-size: 0.8rem; color: var(--muted); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-right a:hover { color: var(--text); }
+
+  /* LEGAL PAGES */
+  .legal-page { display: none; padding: 80px 0 60px; animation: fadeUp 0.5s ease both; }
+  .legal-page.active { display: block; }
+  .main-page { display: block; }
+  .main-page.hidden { display: none; }
+
+  .legal-page h2 {
+    font-size: 2rem; font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .legal-page .legal-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem; color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .legal-page h3 {
+    font-size: 1rem; font-weight: 700;
+    margin: 32px 0 12px;
+    color: var(--accent);
+  }
+
+  .legal-page p {
+    font-size: 0.9rem; color: var(--muted);
+    line-height: 1.8; font-weight: 400;
+    margin-bottom: 12px;
+  }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--muted); font-size: 0.85rem;
+    cursor: pointer; background: none; border: none;
+    font-family: 'Syne', sans-serif; font-weight: 600;
+    margin-bottom: 40px; transition: color 0.2s;
+    padding: 0;
+  }
+  .back-btn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<nav>
+  <div class="nav-logo">
+    <div class="dot"></div>
+    Hugo Décrypte
+  </div>
+  <div class="nav-links">
+    <a href="#" onclick="showPage('main')">Accueil</a>
+    <a href="#" onclick="showPage('tos')">CGU</a>
+    <a href="#" onclick="showPage('privacy')">Confidentialité</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- MAIN PAGE -->
+  <div class="main-page" id="main-page">
+
+    <section class="hero">
+      <div class="badge">🤖 Bot Discord • Serveur Privé</div>
+      <h1>Hugo<br><span>Décrypte</span></h1>
+      <p class="hero-desc">
+        Un bot Discord tout-en-un pour un serveur privé entre amis. Stats TFT, joueurs FiveM en ligne, horaires de prière et commandes fun.
+      </p>
+      <div class="hero-actions">
+        <a href="https://discord.com" class="btn btn-primary">🎮 Discord</a>
+        <button class="btn btn-ghost" onclick="showPage('tos')">📄 CGU</button>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="section-label">Fonctionnalités</div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">⚔️</span>
+          <h3>TFT Versus</h3>
+          <p>Compare les statistiques TFT de deux joueurs dans leurs parties communes. Top moyen, victoires, verdict. Commande : <code>!tft djamil kradouk</code></p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎮</span>
+          <h3>Fraternity RP</h3>
+          <p>Affiche le nombre de joueurs connectés en temps réel sur le serveur FiveM Fraternity RP. Commande : <code>!players</code></p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🕌</span>
+          <h3>Horaires de prière</h3>
+          <p>Recherche les mosquées sur Mawaqit et affiche les horaires de prière du jour pour n'importe quelle ville. Commande : <code>!iftar [ville]</code></p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎉</span>
+          <h3>Commandes fun</h3>
+          <p>Des commandes rigolotes réservées aux membres du serveur : vidéos, images et messages personnalisés pour chaque ami.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="commands">
+      <div class="section-label">Commandes</div>
+      <div class="cmd-list">
+        <div class="cmd-item">
+          <div class="cmd-name">!tft [j1] [j2]</div>
+          <div class="cmd-desc">Versus TFT entre deux joueurs (djamil, kradouk, maisto)</div>
+          <div class="cmd-tag tag-stats">Stats</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">!players</div>
+          <div class="cmd-desc">Joueurs en ligne sur Fraternity RP</div>
+          <div class="cmd-tag tag-info">Info</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">!iftar [ville]</div>
+          <div class="cmd-desc">Horaires de prière via Mawaqit</div>
+          <div class="cmd-tag tag-mosque">Prière</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">!commandes</div>
+          <div class="cmd-desc">Affiche toutes les commandes disponibles</div>
+          <div class="cmd-tag tag-info">Info</div>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">!kradouk, !maisto…</div>
+          <div class="cmd-desc">Commandes fun réservées au serveur privé</div>
+          <div class="cmd-tag tag-fun">Fun</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- CGU PAGE -->
+  <div class="legal-page" id="tos-page">
+    <button class="back-btn" onclick="showPage('main')">← Retour</button>
+    <h2>Conditions Générales d'Utilisation</h2>
+    <p class="legal-date">Dernière mise à jour : Mars 2026</p>
+
+    <h3>1. Description du service</h3>
+    <p>Hugo Décrypte est un bot Discord privé destiné à un usage personnel au sein d'un serveur Discord privé entre amis. Il fournit des fonctionnalités telles que l'affichage de statistiques de jeu, d'informations sur des serveurs de jeu en ligne, et d'horaires de prière.</p>
+
+    <h3>2. Utilisation du service</h3>
+    <p>L'accès au bot est limité aux membres invités du serveur Discord privé. Le bot est fourni "tel quel", sans garantie de disponibilité continue. L'utilisation du bot est strictement personnelle et non commerciale.</p>
+
+    <h3>3. Données utilisées</h3>
+    <p>Le bot accède à des données publiques via des APIs tierces (Riot Games API, FiveM API, Mawaqit). Aucune donnée personnelle n'est collectée, stockée ou revendue.</p>
+
+    <h3>4. Propriété intellectuelle</h3>
+    <p>Les données de jeu proviennent de Riot Games. Ce bot n'est pas affilié à Riot Games, Discord, ou toute autre société citée. Les noms et logos sont la propriété de leurs détenteurs respectifs.</p>
+
+    <h3>5. Limitation de responsabilité</h3>
+    <p>Le bot est fourni gratuitement à titre personnel. Aucune responsabilité ne peut être engagée en cas d'indisponibilité, d'erreur ou d'inexactitude des données affichées.</p>
+
+    <h3>6. Contact</h3>
+    <p>Pour toute question relative à ces conditions, vous pouvez contacter l'administrateur directement via le serveur Discord privé.</p>
+  </div>
+
+  <!-- PRIVACY PAGE -->
+  <div class="legal-page" id="privacy-page">
+    <button class="back-btn" onclick="showPage('main')">← Retour</button>
+    <h2>Politique de Confidentialité</h2>
+    <p class="legal-date">Dernière mise à jour : Mars 2026</p>
+
+    <h3>1. Données collectées</h3>
+    <p>Hugo Décrypte ne collecte, ne stocke et ne traite aucune donnée personnelle. Le bot ne conserve aucun historique de messages, aucun identifiant utilisateur Discord, et aucune information personnelle.</p>
+
+    <h3>2. Données de jeu</h3>
+    <p>Les noms de joueurs TFT utilisés dans les commandes sont des pseudonymes publics fournis volontairement par l'utilisateur lors de l'appel de la commande. Ces données transitent par l'API publique de Riot Games et ne sont pas conservées.</p>
+
+    <h3>3. APIs tierces</h3>
+    <p>Le bot utilise les APIs suivantes pour fonctionner : Riot Games API (statistiques TFT), FiveM API (joueurs en ligne), Mawaqit (horaires de prière), SerpAPI (recherche web). Ces services ont leurs propres politiques de confidentialité.</p>
+
+    <h3>4. Cookies et tracking</h3>
+    <p>Ce site web n'utilise aucun cookie, aucun outil de tracking, et aucun service d'analyse. Aucune donnée de navigation n'est collectée.</p>
+
+    <h3>5. Droits</h3>
+    <p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Étant donné qu'aucune donnée n'est collectée, ces droits s'exercent de facto.</p>
+
+    <h3>6. Contact</h3>
+    <p>Pour toute question relative à cette politique, vous pouvez contacter l'administrateur directement via le serveur Discord privé.</p>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-left">© 2026 Hugo Décrypte — Bot Discord Privé</div>
+  <div class="footer-right">
+    <a href="#" onclick="showPage('tos')">CGU</a>
+    <a href="#" onclick="showPage('privacy')">Confidentialité</a>
+  </div>
+</footer>
+
+<script>
+function showPage(page) {
+  document.getElementById('main-page').classList.toggle('hidden', page !== 'main');
+  document.getElementById('tos-page').classList.toggle('active', page === 'tos');
+  document.getElementById('privacy-page').classList.toggle('active', page === 'privacy');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>
